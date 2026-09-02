@@ -12,6 +12,8 @@ Without this, moving a slider would re-open the database and re-fit PCA.
 from __future__ import annotations
 
 import json
+import os
+from pathlib import Path
 
 import duckdb
 import pandas as pd
@@ -23,11 +25,24 @@ from ..similarity.feature_matrix import RoleMatrix, build_role_matrix
 
 # The full curated database is built locally and gitignored (~277 MB, mostly raw
 # events). The committed app database holds only the marts the app reads, so a
-# deployment works without running the pipeline. Local development uses the full
-# database when it is present.
+# deployment works without running the pipeline.
 FULL_DB_PATH = DATA_DIR / "curated.duckdb"
 APP_DB_PATH = DATA_DIR / "sample" / "app.duckdb"
-DB_PATH = FULL_DB_PATH if FULL_DB_PATH.exists() else APP_DB_PATH
+
+# Resolution order: an explicit override, then the full local database, then the
+# committed one. The override lets a deployment point somewhere else, and lets
+# the tests exercise the shipped configuration without moving any files.
+DB_PATH_ENV_VAR = "FIP_DB_PATH"
+
+
+def _resolve_db_path() -> Path:
+    override = os.environ.get(DB_PATH_ENV_VAR)
+    if override:
+        return Path(override)
+    return FULL_DB_PATH if FULL_DB_PATH.exists() else APP_DB_PATH
+
+
+DB_PATH = _resolve_db_path()
 MANIFEST_PATH = DATA_DIR / "raw" / "manifest.json"
 
 

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # The app dependencies are installed from requirements.txt (the same file
+      # the deployment uses) plus the dev tools. The ingestion dependencies are
+      # not needed: CI never downloads data, it runs against the small committed
+      # database in data/sample/app.duckdb.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest ruff
+
+      - name: Lint
+        run: ruff check .
+
+      # Because the raw data is gitignored, CI has no curated database and the
+      # app falls back to the committed one. That makes this run a continuous
+      # check of the deployed configuration, not just of the unit tests.
+      - name: Test
+        run: pytest -q

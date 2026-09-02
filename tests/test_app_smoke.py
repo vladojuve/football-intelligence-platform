@@ -15,9 +15,16 @@ dependency.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from src.app.data import DB_PATH
+
+# AppTest resolves relative paths against the file that calls it, so a bare
+# "app.py" would be looked up inside tests/. Absolute paths keep these tests
+# independent of the working directory they are run from.
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 pytest.importorskip("streamlit")
 from streamlit.testing.v1 import AppTest
@@ -41,10 +48,10 @@ TIMEOUT = 120
 
 def _open(page: str | None = None) -> AppTest:
     """Run the app, optionally navigating to a page first."""
-    app = AppTest.from_file("app.py", default_timeout=TIMEOUT)
+    app = AppTest.from_file(str(REPO_ROOT / "app.py"), default_timeout=TIMEOUT)
     app.run()
     if page is not None:
-        app.switch_page(page)
+        app.switch_page(str(REPO_ROOT / page))
         app.run()
     return app
 
