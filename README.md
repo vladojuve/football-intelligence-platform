@@ -1,25 +1,62 @@
 # Football Intelligence Platform
 
-Player recruitment similarity and team playing-style classification, built on [StatsBomb Open Data](https://github.com/statsbomb/open-data).
+[![CI](https://github.com/SamiRadulov/football-intelligence-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/SamiRadulov/football-intelligence-platform/actions/workflows/ci.yml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-> **Status: early development.** This README will grow with the project.
+Find **stylistically similar players** for recruitment, and group **teams by how they
+play** — every result traceable back to the metrics behind it.
+
+Built from **1,313,773 raw match events** (Premier League 2015/16,
+[StatsBomb Open Data](https://github.com/statsbomb/open-data)): every pass, carry,
+shot, tackle and pressure, each with pitch coordinates.
+
+> **Explicit non-goal:** no match-result, scoreline or betting prediction. Results are
+> descriptive. Similarity means two players *do similar things* — not that they are
+> equally good, tactically interchangeable, or worth the same fee.
 
 ## What it does
 
-An end-to-end football analytics platform answering two questions:
+| Module | Question it answers |
+|---|---|
+| **Player Recruitment Similarity** | Who resembles this player, filtered by role and minutes — and *why*, dimension by dimension |
+| **Team Playing-Style Classification** | Which teams play alike, grouped into data-driven style clusters with evidence-based labels |
 
-1. **Player Recruitment Similarity** — who resembles a reference player, filtered by role, age, minutes and competition, with an interpretable explanation of *why* they are similar.
-2. **Team Playing-Style Classification** — which teams play alike, grouped into data-driven style clusters with evidence-based labels.
-
-Explicit non-goal: no match-result, scoreline or betting prediction. Results are descriptive — similarity does not mean equal quality or transfer suitability.
+It works. Searching for **N'Golo Kanté** returns Idrissa Gueye (0.80), Jack Cork and
+Mousa Dembélé — the other ball-winning midfielders. Searching for **Mesut Özil**
+returns Kevin De Bruyne (0.85), David Silva and Dimitri Payet. The team clusters
+describe Leicester's title season as direct, wide and shot-efficient with minimal
+possession, having been told nothing about them.
 
 ## Architecture
 
-```
-RAW (StatsBomb JSON) → STAGING (Parquet) → CURATED (DuckDB) → FEATURES (player/team matrices) → APP (Streamlit)
+```mermaid
+flowchart LR
+    SB[("StatsBomb<br/>Open Data")] --> RAW
+
+    subgraph pipeline [" "]
+        direction LR
+        RAW["**Raw**<br/>unchanged JSON<br/>+ manifest"]
+        STG["**Staging**<br/>Parquet<br/>4 canonical tables"]
+        CUR[("**Curated**<br/>DuckDB")]
+        FEAT["**Feature marts**<br/>player + team"]
+        MODEL["**Models**<br/>similarity<br/>style clusters"]
+        RAW --> STG --> CUR --> FEAT --> MODEL
+    end
+
+    MODEL --> APP["**Streamlit app**<br/>6 pages"]
+
+    QC{{"Quality gate<br/>15 hard checks"}} -.blocks.-> CUR
+    CFG[/"feature_config.yml<br/>all analytical settings"/] -.reads.-> FEAT
+    CFG -.reads.-> MODEL
 ```
 
-Planned stack: Python (pandas/Polars), Parquet + DuckDB, scikit-learn, Plotly + mplsoccer, Streamlit, pytest + Ruff + GitHub Actions.
+Each layer only reads from the one above and never edits it, so every number in the
+app can be traced back to the event it came from. The build **fails** if any hard
+quality check breaks, so the marts can never be built from data that violates them.
+
+**Stack:** Python 3.12 · pandas · DuckDB + Parquet · scikit-learn · Plotly ·
+Streamlit · pytest + Ruff + GitHub Actions.
 
 ## Quick start
 
@@ -86,20 +123,44 @@ This project uses **StatsBomb Open Data**. See [DATA_SOURCES.md](DATA_SOURCES.md
 
 ## The app
 
-A Streamlit application with six pages:
-
-| Page | What it does |
-|---|---|
-| **Home** | Coverage, what the platform claims and what it does not |
-| **Player Search** | Pick a reference player, filter candidates, ranked similarity with reasons |
-| **Player Comparison** | Percentile radar, side-by-side bars, closest and most different dimensions |
-| **Team Style Map** | PCA style space coloured by cluster, with what each axis means |
-| **Team Profile** | Style fingerprint, nearest teams, centroid comparison, match-to-match variability |
-| **Methodology & Data Quality** | Definitions, validation results, pipeline checks, limitations |
-
 ```bash
 .venv\Scripts\streamlit run app.py
 ```
+
+### Player Search
+
+Pick a reference player, filter candidates by minutes, and get a ranked list — each
+row carrying its similarity score, the share of features actually available for that
+player, and the dimensions the two players are most and least alike on.
+
+![Player Search](docs/screenshots/02-player-search.png)
+
+### Team Style Map
+
+The two strongest style dimensions found in the data, coloured by cluster. The axes
+were not chosen in advance: PC1 turned out to separate control from directness, PC2
+advanced territory from deep play. Leicester's title-winning season sits well outside
+everyone else.
+
+![Team Style Map](docs/screenshots/04-team-style-map.png)
+
+### Player Comparison
+
+![Player Comparison](docs/screenshots/03-player-comparison.png)
+
+### Team Profile
+
+A team's style fingerprint, its nearest neighbours (which may sit in another cluster),
+how it differs from its own cluster centroid, and how much it varies match to match.
+
+![Team Profile](docs/screenshots/05-team-profile.png)
+
+All six pages: **Home**, **Player Search**, **Player Comparison**, **Team Style Map**,
+**Team Profile**, and **Methodology & Data Quality** (metric definitions, validation
+results, pipeline checks and limitations).
+
+Screenshots are generated by `scripts/capture_screenshots.py` rather than taken by
+hand, so they stay current when the UI changes.
 
 ## Methodology
 

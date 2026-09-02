@@ -61,6 +61,9 @@ table["similarity"] = table["similarity"].round(3)
 table["most alike on"] = table["most_similar_on"].apply(lambda fs: ", ".join(fs[:3]))
 table["differs most on"] = table["biggest_differences"].apply(lambda fs: ", ".join(fs))
 table["⚠"] = table["low_minutes"].map({True: "low minutes", False: ""})
+# Coverage is stored as a 0-1 share; Streamlit's "%%" only appends a percent
+# sign, it does not scale, so convert here.
+table["coverage"] = table["coverage"] * 100
 
 st.dataframe(
     table[["player_name", "minutes", "similarity", "coverage",
