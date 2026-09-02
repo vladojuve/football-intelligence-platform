@@ -70,7 +70,8 @@ def run_all_checks(
     player_ids = set(dim_players["player_id"])
 
     # 1. Schema: the columns other phases depend on must exist.
-    results.append(_require_columns(dim_matches, {"match_id", "home_team", "away_team"}, "dim_matches"))
+    results.append(
+        _require_columns(dim_matches, {"match_id", "home_team", "away_team"}, "dim_matches"))
     results.append(_require_columns(dim_players, {"player_id", "player_name"}, "dim_players"))
     results.append(_require_columns(
         fact_lineups, {"match_id", "player_id", "minutes", "is_starter", "played"}, "fact_lineups"))
@@ -96,7 +97,8 @@ def run_all_checks(
     results.append(CheckResult(
         name="minutes:11_starters_per_team",
         passed=bad_starter_groups.empty,
-        detail="ok" if bad_starter_groups.empty else f"{len(bad_starter_groups)} team-matches without 11 starters",
+        detail="ok" if bad_starter_groups.empty
+        else f"{len(bad_starter_groups)} team-matches without 11 starters",
     ))
 
     # 5. Nobody plays longer than their match lasted (+ small tolerance).

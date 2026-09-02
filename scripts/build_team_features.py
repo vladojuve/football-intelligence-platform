@@ -18,9 +18,9 @@ import duckdb
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.config import DATA_DIR  # noqa: E402
-from src.features.team_match import STYLE_FEATURES, compute_team_match  # noqa: E402
-from src.features.team_season import build_team_season  # noqa: E402
+from src.config import DATA_DIR
+from src.features.team_match import STYLE_FEATURES, compute_team_match
+from src.features.team_season import build_team_season
 
 DB_PATH = DATA_DIR / "curated.duckdb"
 STAGING_DIR = DATA_DIR / "staging"

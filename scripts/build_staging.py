@@ -21,16 +21,16 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.config import DATA_DIR, RAW_DIR, load_config  # noqa: E402
-from src.transformations.events import flatten_events  # noqa: E402
-from src.transformations.matches import build_dim_matches  # noqa: E402
-from src.transformations.minutes import (  # noqa: E402
+from src.config import DATA_DIR, RAW_DIR, load_config
+from src.transformations.events import flatten_events
+from src.transformations.matches import build_dim_matches
+from src.transformations.minutes import (
     build_fact_lineups,
     build_lineup_rows,
     match_end_minute,
 )
-from src.transformations.players import build_dim_players  # noqa: E402
-from src.validation.checks import run_all_checks, summarize  # noqa: E402
+from src.transformations.players import build_dim_players
+from src.validation.checks import run_all_checks, summarize
 
 STAGING_DIR = DATA_DIR / "staging"
 EVENTS_DIR = STAGING_DIR / "fact_events"
@@ -51,7 +51,9 @@ def main() -> None:
     args = parser.parse_args()
 
     dataset = load_config()["dataset"]
-    matches_file = RAW_DIR / "matches" / str(dataset["competition_id"]) / f"{dataset['season_id']}.json"
+    matches_file = (
+        RAW_DIR / "matches" / str(dataset["competition_id"]) / f"{dataset['season_id']}.json"
+    )
     matches_raw = _load_json(matches_file)
 
     dim_matches = build_dim_matches(matches_raw)

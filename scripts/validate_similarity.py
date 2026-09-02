@@ -28,11 +28,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.config import DATA_DIR, load_config  # noqa: E402
-from src.features.player_season import build_player_season  # noqa: E402
-from src.features.roles import assign_player_roles  # noqa: E402
-from src.similarity.engine import weighted_cosine_matrix  # noqa: E402
-from src.similarity.feature_matrix import build_role_matrix  # noqa: E402
+from src.config import DATA_DIR, load_config
+from src.features.player_season import build_player_season
+from src.features.roles import assign_player_roles
+from src.similarity.engine import weighted_cosine_matrix
+from src.similarity.feature_matrix import build_role_matrix
 
 DB_PATH = DATA_DIR / "curated.duckdb"
 

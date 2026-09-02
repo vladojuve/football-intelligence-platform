@@ -17,14 +17,14 @@ import duckdb
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.config import DATA_DIR, load_config  # noqa: E402
-from src.features.player_match import compute_player_match  # noqa: E402
-from src.features.player_season import (  # noqa: E402
+from src.config import DATA_DIR, load_config
+from src.features.player_match import compute_player_match
+from src.features.player_season import (
     METRIC_COLUMNS,
     build_player_season,
     team_possession_share,
 )
-from src.features.roles import assign_player_roles  # noqa: E402
+from src.features.roles import assign_player_roles
 
 
 def validate_player_season(season, min_minutes: int) -> None:

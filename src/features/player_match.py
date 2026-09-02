@@ -80,23 +80,35 @@ def compute_player_match(events: pd.DataFrame) -> pd.DataFrame:
     # --- Passing & security ---
     e["passes"] = open_play_pass.astype(int)
     e["passes_completed"] = open_play_completed.astype(int)
-    e["passes_forward"] = (open_play_completed & (e["pass_end_x"] - e["location_x"] >= FORWARD_MIN_METRES)).astype(int)
+    forward_delta = e["pass_end_x"] - e["location_x"]
+    e["passes_forward"] = (
+        open_play_completed & (forward_delta >= FORWARD_MIN_METRES)
+    ).astype(int)
     e["passes_long"] = (open_play_pass & (e["pass_length"] >= LONG_PASS_MIN)).astype(int)
 
     # --- Progression ---
-    e["prog_passes"] = (open_play_completed & (start_dist - pass_end_dist >= PROGRESSIVE_MIN_METRES)).astype(int)
-    e["prog_carries"] = (is_carry & (start_dist - carry_end_dist >= PROGRESSIVE_MIN_METRES)).astype(int)
+    e["prog_passes"] = (
+        open_play_completed & (start_dist - pass_end_dist >= PROGRESSIVE_MIN_METRES)
+    ).astype(int)
+    e["prog_carries"] = (
+        is_carry & (start_dist - carry_end_dist >= PROGRESSIVE_MIN_METRES)
+    ).astype(int)
     enters_final_third = (e["location_x"] < FINAL_THIRD_X)
     pass_ft = open_play_completed & enters_final_third & (e["pass_end_x"] >= FINAL_THIRD_X)
     carry_ft = is_carry & enters_final_third & (e["carry_end_x"] >= FINAL_THIRD_X)
     e["final_third_entries"] = (pass_ft | carry_ft).astype(int)
-    pass_box = open_play_completed & ~in_box(e["location_x"], e["location_y"]) & in_box(e["pass_end_x"], e["pass_end_y"])
-    carry_box = is_carry & ~in_box(e["location_x"], e["location_y"]) & in_box(e["carry_end_x"], e["carry_end_y"])
+    starts_in_box = in_box(e["location_x"], e["location_y"])
+    pass_box = (
+        open_play_completed & ~starts_in_box & in_box(e["pass_end_x"], e["pass_end_y"])
+    )
+    carry_box = is_carry & ~starts_in_box & in_box(e["carry_end_x"], e["carry_end_y"])
     e["box_entries"] = (pass_box | carry_box).astype(int)
 
     # --- Creation ---
     e["key_passes"] = (is_pass & e["pass_shot_assist"]).astype(int)
-    e["crosses_box"] = (completed & e["pass_cross"] & in_box(e["pass_end_x"], e["pass_end_y"])).astype(int)
+    e["crosses_box"] = (
+        completed & e["pass_cross"] & in_box(e["pass_end_x"], e["pass_end_y"])
+    ).astype(int)
     e["through_balls"] = (open_play_completed & e["pass_through_ball"]).astype(int)
 
     # --- Shooting (non-penalty) ---
@@ -114,7 +126,10 @@ def compute_player_match(events: pd.DataFrame) -> pd.DataFrame:
     e["interceptions"] = (e["type"] == "Interception").astype(int)
     e["blocks"] = (e["type"] == "Block").astype(int)
     e["recoveries"] = (e["type"] == "Ball Recovery").astype(int)
-    def_action = e["type"].isin(["Pressure", "Interception", "Block", "Clearance", "Ball Recovery"]) | is_tackle
+    def_action = (
+        e["type"].isin(["Pressure", "Interception", "Block", "Clearance", "Ball Recovery"])
+        | is_tackle
+    )
     e["def_actions"] = def_action.astype(int)
     e["def_actions_x_sum"] = np.where(def_action, e["location_x"].fillna(0.0), 0.0)
 
@@ -130,7 +145,9 @@ def compute_player_match(events: pd.DataFrame) -> pd.DataFrame:
     e["touches"] = is_touch.astype(int)
     e["touches_att_third"] = (is_touch & (e["location_x"] >= FINAL_THIRD_X)).astype(int)
     receipt_complete = (e["type"] == "Ball Receipt*") & e["ball_receipt_outcome"].isna()
-    e["receptions_final_third"] = (receipt_complete & (e["location_x"] >= FINAL_THIRD_X)).astype(int)
+    e["receptions_final_third"] = (
+        receipt_complete & (e["location_x"] >= FINAL_THIRD_X)
+    ).astype(int)
     e["actions_pressured"] = (is_touch & e["under_pressure"]).astype(int)
 
     # --- Tactical zones (attacking half) ---

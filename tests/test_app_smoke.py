@@ -20,7 +20,7 @@ import pytest
 from src.app.data import DB_PATH
 
 pytest.importorskip("streamlit")
-from streamlit.testing.v1 import AppTest  # noqa: E402
+from streamlit.testing.v1 import AppTest
 
 pytestmark = pytest.mark.skipif(
     not DB_PATH.exists(),
@@ -131,3 +131,25 @@ def test_methodology_page_embeds_the_docs():
     _assert_clean(app)
     body = " ".join(m.value for m in app.markdown)
     assert "StatsBomb" in body
+
+
+# --- deployment database ---------------------------------------------------
+
+def test_committed_app_database_has_everything_the_app_reads():
+    """The deployed app runs against data/sample/app.duckdb, not the full
+    curated database, so that file must carry every table the pages query."""
+    import duckdb
+
+    from src.app.data import APP_DB_PATH
+
+    assert APP_DB_PATH.exists(), "run scripts/build_app_db.py"
+    con = duckdb.connect(str(APP_DB_PATH), read_only=True)
+    try:
+        tables = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
+        required = {"mart_player_season", "mart_team_season", "mart_team_match",
+                    "model_team_style", "dim_matches", "pipeline_stats"}
+        assert required <= tables, f"missing: {sorted(required - tables)}"
+        assert con.execute("SELECT count(*) FROM mart_player_season").fetchone()[0] > 0
+        assert con.execute("SELECT count(*) FROM model_team_style").fetchone()[0] > 0
+    finally:
+        con.close()

@@ -5,6 +5,10 @@ data/staging/
 *.duckdb
 *.duckdb.wal
 
+# ...except the small app database that ships with the repo so the deployed
+# app works without running the pipeline (derived marts only, no raw events).
+!data/sample/app.duckdb
+
 # Python
 __pycache__/
 *.py[cod]

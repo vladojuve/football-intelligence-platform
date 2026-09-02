@@ -20,9 +20,9 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.config import DATA_DIR, load_config  # noqa: E402
-from src.similarity.engine import explain_pair, find_similar  # noqa: E402
-from src.similarity.feature_matrix import build_role_matrix  # noqa: E402
+from src.config import DATA_DIR, load_config
+from src.similarity.engine import explain_pair, find_similar
+from src.similarity.feature_matrix import build_role_matrix
 
 DB_PATH = DATA_DIR / "curated.duckdb"
 

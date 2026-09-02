@@ -121,15 +121,16 @@ def feature_subset_stability(
     """
     baseline = fit_clusters(space.components, k, random_state)
     rng = np.random.default_rng(random_state)
-    n_keep = int(round(len(space.features) * (1 - drop_fraction)))
+    n_keep = round(len(space.features) * (1 - drop_fraction))
 
     scores = []
     for _ in range(n_repeats):
         kept = rng.choice(space.features, size=n_keep, replace=False)
         subset = space.z[list(kept)]
         full = PCA(random_state=random_state).fit(subset.to_numpy())
-        n_components = int(np.searchsorted(np.cumsum(full.explained_variance_ratio_),
-                                           variance_target) + 1)
+        n_components = int(
+            np.searchsorted(np.cumsum(full.explained_variance_ratio_), variance_target)
+        ) + 1
         projected = PCA(n_components=n_components, random_state=random_state).fit_transform(
             subset.to_numpy())
         labels = KMeans(n_clusters=k, n_init=10, random_state=random_state).fit_predict(projected)
@@ -182,7 +183,10 @@ def outlier_distances(space: StyleSpace, labels: np.ndarray) -> pd.DataFrame:
     """
     z = space.z.to_numpy()
     centroids = {c: z[labels == c].mean(axis=0) for c in np.unique(labels)}
-    distances = [np.linalg.norm(row - centroids[label]) for row, label in zip(z, labels)]
+    distances = [
+        np.linalg.norm(row - centroids[label])
+        for row, label in zip(z, labels, strict=True)
+    ]
     return (
         pd.DataFrame({"team": space.z.index, "cluster": labels, "distance": distances})
         .sort_values("distance", ascending=False)

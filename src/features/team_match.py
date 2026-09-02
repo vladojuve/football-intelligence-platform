@@ -32,7 +32,6 @@ from .pitch import (
     in_zone14,
 )
 from .player_match import (
-    FORWARD_MIN_METRES,
     LONG_PASS_MIN,
     PROGRESSIVE_MIN_METRES,
     SET_PIECE_PASS_TYPES,
@@ -126,7 +125,9 @@ def _raw_counts(events: pd.DataFrame) -> pd.DataFrame:
     e["all_passes"] = is_pass.astype(int)
     e["passes"] = open_play.astype(int)
     e["passes_completed"] = open_play_completed.astype(int)
-    e["passes_backward"] = (open_play_completed & (forward_delta <= BACKWARD_MAX_METRES)).astype(int)
+    e["passes_backward"] = (
+        open_play_completed & (forward_delta <= BACKWARD_MAX_METRES)
+    ).astype(int)
     e["passes_long"] = (open_play & (e["pass_length"] >= LONG_PASS_MIN)).astype(int)
     e["forward_dist_sum"] = np.where(open_play_completed, forward_delta.fillna(0.0), 0.0)
 
@@ -215,7 +216,7 @@ def _raw_counts(events: pd.DataFrame) -> pd.DataFrame:
 def _attach_opponent(counts: pd.DataFrame) -> pd.DataFrame:
     """Join each team-match row to the other team's row in the same match."""
     opponent_columns = ["all_passes", "final_third_passes", "passes_in_own_60", "shots", "npxg"]
-    slim = counts[["match_id", "team_id", "team"] + opponent_columns]
+    slim = counts[["match_id", "team_id", "team", *opponent_columns]]
     pairs = counts.merge(slim, on="match_id", suffixes=("", "_opp"))
     return pairs[pairs["team_id"] != pairs["team_id_opp"]].reset_index(drop=True)
 

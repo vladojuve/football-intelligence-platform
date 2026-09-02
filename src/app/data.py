@@ -21,7 +21,13 @@ from ..clustering.style_model import StyleSpace, build_style_space
 from ..config import DATA_DIR, PROJECT_ROOT, load_config
 from ..similarity.feature_matrix import RoleMatrix, build_role_matrix
 
-DB_PATH = DATA_DIR / "curated.duckdb"
+# The full curated database is built locally and gitignored (~277 MB, mostly raw
+# events). The committed app database holds only the marts the app reads, so a
+# deployment works without running the pipeline. Local development uses the full
+# database when it is present.
+FULL_DB_PATH = DATA_DIR / "curated.duckdb"
+APP_DB_PATH = DATA_DIR / "sample" / "app.duckdb"
+DB_PATH = FULL_DB_PATH if FULL_DB_PATH.exists() else APP_DB_PATH
 MANIFEST_PATH = DATA_DIR / "raw" / "manifest.json"
 
 
@@ -60,13 +66,27 @@ def team_style() -> pd.DataFrame:
     return _table("model_team_style")
 
 
+def _event_count(con: duckdb.DuckDBPyConnection) -> int:
+    """Raw event count: read from fact_events locally, or the frozen stat when
+    running against the committed app database, which does not ship events."""
+    tables = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
+    if "fact_events" in tables:
+        return con.execute("SELECT count(*) FROM fact_events").fetchone()[0]
+    if "pipeline_stats" in tables:
+        row = con.execute(
+            "SELECT value FROM pipeline_stats WHERE metric = 'events'").fetchone()
+        if row:
+            return int(row[0])
+    return 0
+
+
 @st.cache_data
 def dataset_summary() -> dict:
     """Coverage figures and the raw-layer download timestamp for the home page."""
     con = connection()
     counts = {
         "matches": con.execute("SELECT count(*) FROM dim_matches").fetchone()[0],
-        "events": con.execute("SELECT count(*) FROM fact_events").fetchone()[0],
+        "events": _event_count(con),
         "players_qualified": con.execute("SELECT count(*) FROM mart_player_season").fetchone()[0],
         "teams": con.execute("SELECT count(*) FROM mart_team_season").fetchone()[0],
     }

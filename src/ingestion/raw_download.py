@@ -16,7 +16,7 @@ of match IDs, and any files that failed to download.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import requests
@@ -71,7 +71,7 @@ def download_dataset(
             dest = raw_dir / kind / f"{match_id}.json"
             try:
                 total_bytes += sbod.download_file(url_fn(match_id, ref), dest, session, force)
-            except Exception as exc:  # noqa: BLE001 - record and continue
+            except Exception as exc:
                 failures.append({"kind": kind, "match_id": match_id, "error": str(exc)})
                 print(f"  ! {kind} {match_id}: {exc}")
         if index % progress_every == 0 or index == len(match_ids):
@@ -80,7 +80,7 @@ def download_dataset(
     manifest = {
         "dataset": {"competition_id": competition_id, "season_id": season_id},
         "source": {"base": "statsbomb/open-data", "ref": ref},
-        "downloaded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "downloaded_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "counts": {
             "matches": len(match_ids),
             "lineups": len(match_ids) - sum(f["kind"] == "lineups" for f in failures),

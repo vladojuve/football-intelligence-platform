@@ -14,7 +14,6 @@ this table holds the human-readable values and their percentiles.
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 
 # Defensive volume metrics that get possession-adjusted.
@@ -99,7 +98,8 @@ def build_player_season(
     season["pass_completion_pct"] = _guarded_rate(
         season["passes_completed"], season["passes"], thresholds["min_pass_attempts_for_rate"])
     season["forward_pass_share"] = _guarded_rate(
-        season["passes_forward"], season["passes_completed"], thresholds["min_pass_attempts_for_rate"])
+        season["passes_forward"], season["passes_completed"],
+        thresholds["min_pass_attempts_for_rate"])
     season["long_pass_share"] = _guarded_rate(
         season["passes_long"], season["passes"], thresholds["min_pass_attempts_for_rate"])
     season["turnovers_p90"] = _p90(season["turnovers"], m)
@@ -168,5 +168,8 @@ def build_player_season(
 
     identity = ["player_id", "player_name", "nickname", "role", "primary_position",
                 "team_id", "minutes", "matches_played", "possession_share", "low_minutes"]
-    ordered = identity + METRIC_COLUMNS + ["np_goals_minus_npxg"] + [f"pct_{c}" for c in METRIC_COLUMNS]
+    ordered = [
+        *identity, *METRIC_COLUMNS, "np_goals_minus_npxg",
+        *[f"pct_{c}" for c in METRIC_COLUMNS],
+    ]
     return season[ordered].sort_values(["role", "player_name"]).reset_index(drop=True)

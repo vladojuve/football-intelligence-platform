@@ -16,8 +16,8 @@ from pathlib import Path
 # Make `import src...` work when run as a plain script.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.config import RAW_DIR, load_config  # noqa: E402
-from src.ingestion.raw_download import download_dataset  # noqa: E402
+from src.config import RAW_DIR, load_config
+from src.ingestion.raw_download import download_dataset
 
 
 def main() -> None:

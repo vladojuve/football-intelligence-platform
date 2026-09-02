@@ -25,7 +25,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.clustering.style_model import (  # noqa: E402
+from src.clustering.style_model import (
     build_style_space,
     cluster_profiles,
     describe_cluster,
@@ -35,7 +35,7 @@ from src.clustering.style_model import (  # noqa: E402
     nearest_teams,
     outlier_distances,
 )
-from src.config import DATA_DIR, load_config  # noqa: E402
+from src.config import DATA_DIR, load_config
 
 DB_PATH = DATA_DIR / "curated.duckdb"
 STAGING_DIR = DATA_DIR / "staging"
@@ -74,10 +74,9 @@ def explore(space, cfg) -> None:
 
     for k in cfg["k_candidates"]:
         labels = fit_clusters(space.components, k, cfg["random_state"])
-        profiles = cluster_profiles(space, labels)
         print(f"\n--- k = {k} ---")
         for cluster in sorted(set(labels)):
-            members = [t for t, lab in zip(space.teams, labels) if lab == cluster]
+            members = [t for t, lab in zip(space.teams, labels, strict=True) if lab == cluster]
             print(f"  cluster {cluster} ({len(members)}): {', '.join(members)}")
 
 
@@ -111,7 +110,7 @@ def main() -> None:
 
     print("Cluster centroids — the evidence behind each label:")
     for cluster in sorted(set(labels)):
-        members = [t for t, lab in zip(space.teams, labels) if lab == cluster]
+        members = [t for t, lab in zip(space.teams, labels, strict=True) if lab == cluster]
         name = label_names.get(cluster, "<unnamed>")
         print(f"\n  Cluster {cluster}: {name}  ({len(members)} teams)")
         print(f"    {', '.join(members)}")
@@ -130,7 +129,7 @@ def main() -> None:
 
     # Assemble the model table.
     rows = []
-    for team, label in zip(space.teams, labels):
+    for team, label in zip(space.teams, labels, strict=True):
         near = nearest_teams(space, team, N_NEAREST)
         record = {
             "team": team,

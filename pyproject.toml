@@ -26,5 +26,20 @@ dev = [
 line-length = 100
 target-version = "py312"
 
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I import order, UP pyupgrade, B bugbear,
+# SIM simplify, RUF ruff-specific.
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF"]
+# RUF001/2/3: user-facing copy deliberately uses typographic characters
+# (×, ℹ, — and friends). Flagging them as "ambiguous" would degrade the text.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts and app pages must set sys.path or call st.set_page_config before
+# importing project modules, so imports legitimately follow other statements.
+"scripts/*.py" = ["E402"]
+"app.py" = ["E402"]
+"tests/*.py" = ["E402"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
