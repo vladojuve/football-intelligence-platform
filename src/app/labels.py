@@ -106,26 +106,6 @@ def pretty(column: str) -> str:
     return label[:1].upper() + label[1:]
 
 
-def short(column: str, limit: int = 26) -> str:
-    """A label that fits above a small chart, without a mid-word cut."""
-    label = pretty(column)
-    if len(label) <= limit:
-        return label
-    # Drop a trailing parenthetical first — it is the least load-bearing part.
-    if "(" in label:
-        trimmed = label[: label.index("(")].strip()
-        if len(trimmed) <= limit:
-            return trimmed
-        label = trimmed
-    words = label.split()
-    out: list[str] = []
-    for word in words:
-        if len(" ".join([*out, word])) > limit:
-            break
-        out.append(word)
-    return " ".join(out) if out else label[:limit]
-
-
 def format_value(column: str, value: float | None) -> str:
     """Format a raw metric value the way its own units read."""
     if value is None or (isinstance(value, float) and value != value):

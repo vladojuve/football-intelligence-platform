@@ -93,6 +93,72 @@ def wrap_label(label: str, width: int = 24, max_lines: int = 2) -> str:
     return "<br>".join(lines)
 
 
+# Text colours for the table view. Green/slate/red is the convention scouting
+# reports use, and it is doing a different job from the ring's green ramp: the
+# ring shows *how much*, this shows *which end of the distribution*.
+STRONG_TEXT = "#0B6A39"
+MIDDLING_TEXT = "#3D6076"
+WEAK_TEXT = "#B23A2B"
+
+STRONG_FLOOR, WEAK_CEILING = 75.0, 25.0
+
+
+def percentile_text_colour(percentile: float) -> str:
+    """Green at the top of the distribution, red at the bottom, slate between."""
+    if percentile >= STRONG_FLOOR:
+        return STRONG_TEXT
+    if percentile < WEAK_CEILING:
+        return WEAK_TEXT
+    return MIDDLING_TEXT
+
+
+def profile_table(header: str, rows: list[tuple[str, str, float | None]]):
+    """The scouting-report table: attribute on the left, value on the right.
+
+    Each row is `(label, text, percentile)`. A row with `percentile=None` is
+    context — club, position, minutes — and is printed plainly; a row with one is
+    a ranked metric and is coloured by where in the distribution it sits.
+
+    Returns a pandas Styler, which `st.dataframe` renders with the colours
+    intact. The alternative — building the table as raw HTML — would not pick up
+    the app's theme and would not be sortable.
+    """
+    frame = pd.DataFrame({
+        "": [label for label, _, _ in rows],
+        header: [text for _, text, _ in rows],
+    })
+    colours = [
+        f"color: {percentile_text_colour(percentile)}; font-weight: 600"
+        if percentile is not None else ""
+        for _, _, percentile in rows
+    ]
+    return frame.style.apply(lambda _: colours, subset=[header])
+
+
+def table_height(row_count: int, row_height: int = 38) -> int:
+    """Pixel height that shows every row of a profile table without scrolling.
+
+    A report table that scrolls hides exactly the rows a reader came for, and
+    Streamlit sizes dataframes to a fixed viewport unless told otherwise.
+    """
+    return row_height * (row_count + 1) + 4      # +1 for the header row
+
+
+def ordinal(value: float) -> str:
+    """Public spelling of the rank suffix, for tables as well as rings."""
+    return _ordinal(value)
+
+
+def radar_label(text: str, width: int = 21) -> str:
+    """An axis label for a radar, wrapped rather than cut.
+
+    Truncating to fit turned "Non-penalty xG per shot" into "Non-penalty xG per",
+    which reads as a different quantity. Plotly renders `<br>` inside angular
+    tick text, so the label wraps onto a second line instead.
+    """
+    return wrap_label(text, width=width, max_lines=2)
+
+
 def ring_label(text: str, lines: int = TITLE_LINES) -> str:
     """The markdown caption that goes *above* a ring, not inside it.
 
@@ -175,9 +241,16 @@ def share_pie(labels: list[str], values: list[float], title: str = "",
 
 def radar(labels: list[str], series: dict[str, list[float]], title: str = "") -> go.Figure:
     """Percentile radar comparing one or two profiles (values 0-100)."""
+    # Two overlapping translucent shapes in neighbouring greens are hard to tell
+    # apart, and a comparison radar is exactly the case where that matters, so a
+    # pair gets green against slate instead of green against green.
+    palette = (
+        [SERIES_COLOURS[0], SERIES_COLOURS[3]] if len(series) == 2
+        else SERIES_COLOURS
+    )
     fig = go.Figure()
     for i, (name, values) in enumerate(series.items()):
-        colour = SERIES_COLOURS[i % len(SERIES_COLOURS)]
+        colour = palette[i % len(palette)]
         fig.add_trace(
             go.Scatterpolar(
                 r=values + values[:1],          # close the loop
@@ -191,13 +264,24 @@ def radar(labels: list[str], series: dict[str, list[float]], title: str = "") ->
         )
     fig.update_layout(
         title=title,
+        height=560,
+        # Axis labels sit *outside* the polar area, so the default margins clip
+        # them: "Forward pass share" became "d pass share". The polar domain is
+        # also inset, which is what actually reserves the room — margins alone
+        # shrink the figure rather than the plot.
         polar=dict(
-            radialaxis=dict(visible=True, range=[0, 100], gridcolor=GRID_COLOUR),
-            angularaxis=dict(gridcolor=GRID_COLOUR),
+            radialaxis=dict(visible=True, range=[0, 100], gridcolor=GRID_COLOUR,
+                            tickfont=dict(size=11, color=MUTED_TEXT)),
+            angularaxis=dict(gridcolor=GRID_COLOUR, tickfont=dict(size=11)),
             bgcolor="rgba(0,0,0,0)",
+            domain=dict(x=[0.23, 0.77], y=[0.12, 0.88]),
         ),
+        margin=dict(l=10, r=10, t=50, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="left", x=0),
     )
-    return _base_layout(fig, height=560)
+    return fig
 
 
 def percentile_bars(

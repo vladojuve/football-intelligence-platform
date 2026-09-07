@@ -149,6 +149,10 @@ role, so the profile shows what the similarity model actually looks at rather
 than a separate set of metrics chosen to flatter. Every percentile is **within
 the role group**; the full feature table sits underneath.
 
+A toggle swaps the rings for the shape a scouting report uses: the same twelve
+numbers as a table, coloured by where in the distribution they sit, with a radar
+beside it. The club page carries the same toggle for its style fingerprint.
+
 ![Player profile](docs/screenshots/02-player-profile.png)
 
 ### Find similar players

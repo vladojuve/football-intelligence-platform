@@ -37,12 +37,6 @@ with _CENTRE:
     with st.container(horizontal=True, horizontal_alignment="center"):
         searched = st.button("Search", type="primary", icon=":material/search:")
 
-    st.caption(
-        "Accents and apostrophes are optional — “Ngolo Kante” finds N'Golo Kanté, "
-        "“ozil” finds Mesut Özil, and “spurs” finds Tottenham Hotspur.",
-        text_alignment="center",
-    )
-
 players = data.player_options()
 teams = data.team_style()
 fixtures = data.matches()

@@ -129,6 +129,22 @@ def test_player_profile_opens_from_a_link_and_draws_its_rings():
     assert app.selectbox[0].value is not None
 
 
+def test_player_profile_switches_between_rings_and_the_table_view():
+    """Both shapes of the percentile profile have to render for the same player."""
+    from src.app import data
+
+    player = data.player_options().iloc[0]
+    app = _open("pages/player_profile.py", player=str(int(player["player_id"])))
+
+    control = app.segmented_control[0]
+    assert control.value == "Rings"
+
+    control.set_value("Table & radar").run()
+    _assert_clean(app)
+    # The table view adds a dataframe the ring view does not have.
+    assert len(app.dataframe) >= 2
+
+
 def test_player_profile_ignores_a_nonsense_player_parameter():
     """A hand-edited URL must land on the picker, not on a traceback."""
     app = _open("pages/player_profile.py", player="not-an-id")
@@ -171,6 +187,17 @@ def test_team_profile_renders_record_style_and_special_players():
     headers = [s.value for s in app.subheader]
     assert "Special players" in headers
     assert "Style fingerprint" in headers
+
+
+def test_club_profile_switches_between_rings_and_the_table_view():
+    app = _open("pages/team_profile.py", team="Leicester City")
+
+    control = app.segmented_control[0]
+    assert control.value == "Rings"
+
+    control.set_value("Table & radar").run()
+    _assert_clean(app)
+    assert "Special players" in [s.value for s in app.subheader]
 
 
 def test_team_style_map_selects_every_cluster_by_default():

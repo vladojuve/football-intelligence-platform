@@ -19,6 +19,12 @@ from src.features.team_match import STYLE_FEATURES
 RING_COUNT = 8
 COLUMNS_PER_ROW = 4
 
+# The same two shapes the player profile offers, for the same reason: the rings
+# are read at a glance, the table is what a report looks like.
+RINGS = "Rings"
+TABLE = "Table & radar"
+VIEWS = (RINGS, TABLE)
+
 st.title(":material/shield: Club profile")
 
 season = data.team_season()
@@ -90,10 +96,21 @@ with info_right, st.container(border=True):
 
 st.divider()
 st.subheader("Style fingerprint")
+
+view = st.segmented_control(
+    "View", list(VIEWS), default=RINGS, key="club_view",
+    label_visibility="collapsed",
+) or RINGS
+
 st.caption(
     "Percentile against the other 19 clubs on the features where this side was "
-    "furthest from average. The number in each ring is the percentile; the value "
-    "beneath it is the season average. A darker ring means a higher rank."
+    "furthest from average. "
+    + (
+        "The number in each ring is the percentile; the value beneath it is the "
+        "season average. A darker ring means a higher rank."
+        if view == RINGS else
+        "Green is the top quarter of the league, red the bottom quarter."
+    )
 )
 
 percentiles = pd.DataFrame({
@@ -105,23 +122,57 @@ percentiles["distance_from_average"] = (percentiles["percentile"] - 50).abs()
 ranked = percentiles.sort_values("distance_from_average", ascending=False)
 rings = ranked.head(RING_COUNT)
 
-for start in range(0, len(rings), COLUMNS_PER_ROW):
-    chunk = rings.iloc[start:start + COLUMNS_PER_ROW]
-    slots = st.columns(COLUMNS_PER_ROW)
-    for column, (_, feature_row) in zip(slots, chunk.iterrows(), strict=False):
-        with column:
-            st.markdown(charts.ring_label(pretty(feature_row["feature"])),
-                        text_alignment="center", width="stretch")
-            st.plotly_chart(
-                charts.percentile_donut(
-                    percentile=feature_row["percentile"],
-                    value_text=format_value(feature_row["feature"],
-                                            feature_row["value"]),
-                ),
-                width="stretch",
-                key=f"team_ring_{feature_row['feature']}",
-                config={"displayModeBar": False},
-            )
+if view == RINGS:
+    for start in range(0, len(rings), COLUMNS_PER_ROW):
+        chunk = rings.iloc[start:start + COLUMNS_PER_ROW]
+        slots = st.columns(COLUMNS_PER_ROW)
+        for column, (_, feature_row) in zip(slots, chunk.iterrows(), strict=False):
+            with column:
+                st.markdown(charts.ring_label(pretty(feature_row["feature"])),
+                            text_alignment="center", width="stretch")
+                st.plotly_chart(
+                    charts.percentile_donut(
+                        percentile=feature_row["percentile"],
+                        value_text=format_value(feature_row["feature"],
+                                                feature_row["value"]),
+                    ),
+                    width="stretch",
+                    key=f"team_ring_{feature_row['feature']}",
+                    config={"displayModeBar": False},
+                )
+else:
+    table_column, radar_column = st.columns([1, 1])
+    dataset = data.config()["dataset"]
+
+    with table_column:
+        table_rows: list[tuple[str, str, float | None]] = [
+            ("League", dataset["competition_name"], None),
+            ("Season", dataset["season_name"], None),
+            ("Finished", f"{record['position']} of {len(season)}", None),
+            ("Style cluster", style_row["cluster_label"], None),
+        ]
+        for _, feature_row in rings.iterrows():
+            table_rows.append((
+                pretty(feature_row["feature"]),
+                f"{charts.ordinal(feature_row['percentile'])} percentile",
+                float(feature_row["percentile"]),
+            ))
+        table_rows.append(("Matches played", str(int(row["matches"])), None))
+
+        st.dataframe(
+            charts.profile_table(team, table_rows),
+            hide_index=True, width="stretch", row_height=38,
+            height=charts.table_height(len(table_rows)),
+        )
+
+    with radar_column:
+        st.plotly_chart(
+            charts.radar(
+                labels=[charts.radar_label(pretty(f)) for f in rings["feature"]],
+                series={team: [float(p) for p in rings["percentile"]]},
+            ),
+            width="stretch", key="club_radar",
+        )
 
 st.caption(
     "PPDA is inverted by nature: a **low** value means the side pressed hard, so a "

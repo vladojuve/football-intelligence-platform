@@ -12,11 +12,14 @@ import pytest
 from src.app.charts import (
     band_colour,
     percentile_donut,
+    percentile_text_colour,
+    profile_table,
+    radar_label,
     ring_label,
     share_pie,
     wrap_label,
 )
-from src.app.labels import format_value, pretty, short
+from src.app.labels import format_value, pretty
 
 
 @pytest.mark.parametrize(("column", "expected"), [
@@ -35,11 +38,16 @@ def test_unknown_columns_fall_back_to_the_naming_convention():
     assert pretty("something_share") == "Something share"
 
 
-def test_short_labels_never_cut_a_word_in_half():
-    label = short("padj_interceptions_p90", limit=20)
-    assert len(label) <= 20
-    assert not label.endswith(" ")
-    assert label in pretty("padj_interceptions_p90")
+def test_radar_labels_wrap_instead_of_losing_their_ending():
+    """Truncating turned "Non-penalty xG per shot" into "Non-penalty xG per",
+    which reads as a different quantity — so radar labels wrap."""
+    label = radar_label(pretty("npxg_per_shot"))
+    assert "<br>" in label
+    assert label.replace("<br>", " ") == "Non-penalty xG per shot"
+
+
+def test_a_short_radar_label_stays_on_one_line():
+    assert radar_label("Shots per 90") == "Shots per 90"
 
 
 def test_shares_are_shown_as_percentages_and_counts_are_not():
@@ -130,6 +138,49 @@ def test_percentiles_outside_the_range_are_clamped_not_drawn_backwards():
 def test_a_higher_percentile_is_a_darker_green():
     assert band_colour(90) != band_colour(30)
     assert band_colour(90) == band_colour(85)
+
+
+def test_the_table_view_colours_by_where_in_the_distribution_a_value_sits():
+    assert percentile_text_colour(92) == percentile_text_colour(75)
+    assert percentile_text_colour(9) == percentile_text_colour(24)
+    assert percentile_text_colour(50) not in {percentile_text_colour(92),
+                                              percentile_text_colour(9)}
+
+
+def test_the_table_keeps_its_rows_in_the_order_given():
+    """The table is read top to bottom as a report, so it must not be re-sorted
+    into percentile order behind the caller's back."""
+    styled = profile_table("Player", [
+        ("Club", "Leicester City", None),
+        ("Shots per 90", "92nd percentile", 92.0),
+        ("Minutes played", "3179", None),
+    ])
+    assert list(styled.data[""]) == ["Club", "Shots per 90", "Minutes played"]
+    assert styled.data["Player"].iloc[0] == "Leicester City"
+
+
+def test_only_ranked_rows_are_coloured_in_the_table():
+    """Club and minutes are context, not performance — colouring them would
+    imply a ranking that does not exist."""
+    html = profile_table("Player", [
+        ("Club", "Leicester City", None),
+        ("Recoveries per 90", "99th percentile", 99.0),
+        ("Forward pass share", "9th percentile", 9.0),
+    ]).to_html()
+    assert percentile_text_colour(99) in html
+    assert percentile_text_colour(9) in html
+    # The context row carries no colour rule at all.
+    assert html.count("font-weight: 600") == 2
+
+
+def test_a_two_player_radar_uses_two_distinguishable_colours():
+    """Two translucent shapes in neighbouring greens cannot be told apart, and a
+    comparison radar is precisely where that matters."""
+    from src.app.charts import radar
+
+    figure = radar(["a", "b", "c"], {"Vardy": [10, 20, 30], "Kane": [40, 50, 60]})
+    first, second = (trace.line.color for trace in figure.data)
+    assert first != second
 
 
 def test_share_pie_keeps_the_slice_order_it_was_given():

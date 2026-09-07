@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from src.app import charts, data, routing
-from src.app.labels import pretty, short
+from src.app.labels import pretty
 from src.similarity.engine import explain_pair, weighted_cosine_matrix
 
 st.title(":material/compare_arrows: Compare two players")
@@ -89,7 +89,7 @@ def _percentiles(player_id: int, features: list[str]) -> list[float]:
 st.subheader("Profile")
 st.plotly_chart(
     charts.radar(
-        labels=[short(f, limit=20) for f in radar_features],
+        labels=[charts.radar_label(pretty(f)) for f in radar_features],
         series={left_name: _percentiles(left_id, radar_features),
                 right_name: _percentiles(right_id, radar_features)},
     ),
