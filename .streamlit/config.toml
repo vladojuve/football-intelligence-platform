@@ -1,0 +1,58 @@
+# App theme: white background, pitch green accent.
+#
+# Colours and type scale live here rather than in CSS injected from Python:
+# config.toml is the supported theming surface, so it also reaches widgets we
+# never touch (dataframe headers, sliders, the top navigation bar) and it does
+# not break when Streamlit changes its internal class names.
+
+[theme]
+base = "light"
+
+primaryColor = "#0B8A3D"              # pitch green — dark enough for white button text
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F8F4"  # very light green tint for widgets and cards
+textColor = "#14261B"                 # near-black with a green cast
+linkColor = "#0A7A36"
+borderColor = "#D5E7DC"
+codeBackgroundColor = "#F2F8F4"
+codeTextColor = "#14261B"
+
+dataframeBorderColor = "#D5E7DC"
+dataframeHeaderBackgroundColor = "#EAF4EE"
+
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "8px"
+buttonRadius = "8px"
+linkUnderline = false
+
+# Every size below is the Streamlit default plus 2px, which is the change that
+# was asked for: 16 -> 18 base, and the heading scale shifted to match.
+baseFontSize = 18
+headingFontSizes = ["42px", "32px", "26px", "22px", "20px", "18px"]
+headingFontWeights = [700, 650, 600, 600, 600, 600]
+codeFontSize = "0.9rem"
+
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+
+# Chart series colours. Greens first so single-series charts sit inside the
+# palette; the slate and amber exist so a 3+ series chart stays distinguishable
+# for viewers who cannot separate two shades of the same hue.
+chartCategoricalColors = ["#0B8A3D", "#7ACB97", "#1B4D33", "#4A6D7C", "#C98A2B", "#9BC5A8", "#2E7D52"]
+chartSequentialColors = ["#F2F8F4", "#DCEFE3", "#BFE2CC", "#9DD3B2", "#78C297", "#52AE7C", "#2E9A62", "#12854A", "#0B6A39", "#074E2A"]
+
+greenColor = "#0B8A3D"
+greenBackgroundColor = "#E3F3E9"
+greenTextColor = "#075C29"
+redColor = "#C2402F"
+orangeColor = "#C98A2B"
+blueColor = "#4A6D7C"
+grayColor = "#5E7268"
+
+[theme.sidebar]
+backgroundColor = "#F7FBF8"
+secondaryBackgroundColor = "#EAF4EE"
+codeBackgroundColor = "#EAF4EE"
+textColor = "#14261B"
+borderColor = "#D5E7DC"
+primaryColor = "#0B8A3D"

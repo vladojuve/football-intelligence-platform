@@ -15,22 +15,42 @@ st.set_page_config(
     page_title="Football Intelligence Platform",
     page_icon="⚽",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-PAGES = [
-    st.Page("pages/home.py", title="Home", icon="🏠", default=True),
-    st.Page("pages/player_search.py", title="Player Search", icon="🔍"),
-    st.Page("pages/player_comparison.py", title="Player Comparison", icon="📊"),
-    st.Page("pages/team_style_map.py", title="Team Style Map", icon="🗺️"),
-    st.Page("pages/team_profile.py", title="Team Profile", icon="🧭"),
-    st.Page("pages/methodology.py", title="Methodology & Data Quality", icon="📖"),
-]
+from src.app import routing
 
-st.navigation(PAGES).run()
+# Navigation sits in the top header rather than the sidebar, which leaves the
+# sidebar free for each page's own filters. The pages under the empty-string
+# section are shown flat at the start of the bar; the rest become dropdowns, so
+# eight pages fit without the bar wrapping.
+PAGES = {
+    "": [
+        st.Page(routing.HOME, title="Home", icon=":material/home:", default=True),
+        st.Page(routing.MATCHES, title="Matches", icon=":material/stadium:"),
+    ],
+    "Players": [
+        st.Page(routing.PLAYER_SEARCH, title="Find similar players",
+                icon=":material/search:"),
+        st.Page(routing.PLAYER_PROFILE, title="Player profile",
+                icon=":material/person:"),
+        st.Page(routing.PLAYER_COMPARISON, title="Compare two players",
+                icon=":material/compare_arrows:"),
+    ],
+    "Clubs": [
+        st.Page(routing.TEAM_PROFILE, title="Club profile", icon=":material/shield:"),
+        st.Page(routing.TEAM_STYLE_MAP, title="Style map", icon=":material/scatter_plot:"),
+    ],
+    "About": [
+        st.Page(routing.METHODOLOGY, title="Methodology & data quality",
+                icon=":material/book_2:"),
+    ],
+}
 
-st.sidebar.divider()
-st.sidebar.caption(
+st.navigation(PAGES, position="top").run()
+
+st.divider()
+st.caption(
     "Data: **StatsBomb Open Data** — Premier League 2015/16. "
     "Results are descriptive, not a judgement of quality."
 )

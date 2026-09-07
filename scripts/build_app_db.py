@@ -35,6 +35,9 @@ APP_TABLES = [
     "mart_team_match",
     "model_team_style",
     "dim_matches",
+    # The match report reads these two: who was named and what they did.
+    "fact_lineups",
+    "mart_player_match",
 ]
 
 

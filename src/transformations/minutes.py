@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from .names import clean_name
+
 STARTER_REASON = "Starting XI"
 
 
@@ -92,7 +94,7 @@ def build_lineup_rows(
                     "team_id": team["team_id"],
                     "team": team["team_name"],
                     "player_id": player["player_id"],
-                    "player_name": player["player_name"],
+                    "player_name": clean_name(player["player_name"]),
                     "position": position,
                     "is_starter": is_starter,
                     "played": played,

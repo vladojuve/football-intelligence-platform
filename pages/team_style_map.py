@@ -1,22 +1,23 @@
-"""Team Style Map: the PCA style space, coloured by cluster."""
+"""Team style map: the PCA style space, coloured by cluster."""
 
 import streamlit as st
 
-from src.app import charts, data
+from src.app import charts, data, routing
+from src.app.labels import pretty
 
-st.title("🗺️ Team Style Map")
+st.title(":material/scatter_plot: Style map")
 
 space = data.style_space()
 style = data.team_style()
 
 pc1_share, pc2_share = space.explained_variance[0], space.explained_variance[1]
+clusters = sorted(style["cluster_label"].unique())
 
-with st.sidebar:
-    st.header("View")
-    clusters = sorted(style["cluster_label"].unique())
-    selected = st.multiselect("Style clusters", clusters, default=clusters)
-    highlight = st.selectbox("Highlight a team", sorted(style["team"]), index=None,
-                             placeholder="Optional…")
+with st.container(border=True):
+    cluster_column, highlight_column = st.columns([3, 2])
+    selected = cluster_column.multiselect("Style clusters", clusters, default=clusters)
+    highlight = highlight_column.selectbox("Highlight a club", sorted(style["team"]),
+                                           index=None, placeholder="Optional…")
 
 frame = style[style["cluster_label"].isin(selected)]
 if frame.empty:
@@ -30,13 +31,17 @@ st.plotly_chart(
         x_title=f"PC1 — control vs directness ({pc1_share:.0%} of variance)",
         y_title=f"PC2 — advanced territory vs deep play ({pc2_share:.0%} of variance)",
     ),
-    width='stretch',
+    width="stretch",
 )
 
 st.caption(
-    "Teams close together played similarly. The axes are the two strongest style "
+    "Clubs close together played similarly. The axes are the two strongest style "
     "dimensions found in the data, not chosen in advance."
 )
+
+if highlight is not None and st.button(f"Open {highlight}'s profile",
+                                       icon=":material/shield:"):
+    routing.go(routing.TEAM_PROFILE, **{routing.TEAM: highlight})
 
 st.divider()
 st.subheader("What the axes mean")
@@ -44,12 +49,12 @@ st.subheader("What the axes mean")
 axis_left, axis_right = st.columns(2)
 for column, pc, share in ((axis_left, "PC1", pc1_share), (axis_right, "PC2", pc2_share)):
     loadings = space.loadings[pc].sort_values(ascending=False)
-    with column:
+    with column, st.container(border=True):
         st.markdown(f"**{pc}** — {share:.0%} of variance")
         st.markdown("_High end:_ " + ", ".join(
-            f"`{f}`" for f in loadings.head(4).index))
+            pretty(f) for f in loadings.head(4).index))
         st.markdown("_Low end:_ " + ", ".join(
-            f"`{f}`" for f in loadings.tail(4).index))
+            pretty(f) for f in loadings.tail(4).index))
 
 st.divider()
 st.subheader("Clusters")
@@ -57,18 +62,18 @@ st.caption("Labels were written **after** inspecting the centroids — never bef
 
 for label in clusters:
     members = style[style["cluster_label"] == label]
-    with st.expander(f"{label}  ({len(members)} teams)"):
+    with st.expander(f"{label}  ({len(members)} clubs)"):
         st.write(", ".join(sorted(members["team"])))
         st.dataframe(
             members[["team", "centroid_distance", "nearest_teams"]]
             .sort_values("centroid_distance", ascending=False).round(2),
-            hide_index=True, width='stretch',
+            hide_index=True, width="stretch",
             column_config={
-                "team": "Team",
+                "team": "Club",
                 "centroid_distance": st.column_config.NumberColumn(
                     "Distance to centroid",
-                    help="Higher means this label describes the team less well"),
-                "nearest_teams": "Nearest teams (any cluster)",
+                    help="Higher means this label describes the club less well"),
+                "nearest_teams": "Nearest clubs (any cluster)",
             },
         )
 
@@ -76,5 +81,5 @@ st.info(
     "A cluster label is a summary, not a boundary. Nearest-team similarity is computed "
     "in the full standardized feature space, so a side's closest neighbours can sit in "
     "another cluster — Liverpool's, for instance, include Everton.",
-    icon="ℹ️",
+    icon=":material/info:",
 )

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from .names import clean_name
+
 
 def build_dim_players(all_lineups_raw: list[list[dict]]) -> pd.DataFrame:
     """Collect distinct players from every match's lineup file.
@@ -20,8 +22,8 @@ def build_dim_players(all_lineups_raw: list[list[dict]]) -> pd.DataFrame:
                 if pid not in players:
                     players[pid] = {
                         "player_id": pid,
-                        "player_name": player["player_name"],
-                        "nickname": player.get("player_nickname"),
+                        "player_name": clean_name(player["player_name"]),
+                        "nickname": clean_name(player.get("player_nickname")),
                         "country": (player.get("country") or {}).get("name"),
                     }
     return (

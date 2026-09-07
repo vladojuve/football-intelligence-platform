@@ -21,7 +21,9 @@ import streamlit as st
 
 from ..clustering.style_model import StyleSpace, build_style_space
 from ..config import DATA_DIR, PROJECT_ROOT, load_config
+from ..features.player_season import METRIC_COLUMNS
 from ..similarity.feature_matrix import RoleMatrix, build_role_matrix
+from . import insights
 
 # The full curated database is built locally and gitignored (~277 MB, mostly raw
 # events). The committed app database holds only the marts the app reads, so a
@@ -62,6 +64,11 @@ def _table(name: str) -> pd.DataFrame:
 
 
 @st.cache_data
+def tables() -> set[str]:
+    return {row[0] for row in connection().execute("SHOW TABLES").fetchall()}
+
+
+@st.cache_data
 def player_season() -> pd.DataFrame:
     return _table("mart_player_season")
 
@@ -81,13 +88,39 @@ def team_style() -> pd.DataFrame:
     return _table("model_team_style")
 
 
+@st.cache_data
+def matches() -> pd.DataFrame:
+    """Fixtures, newest first, with the trailing whitespace StatsBomb ships."""
+    frame = _table("dim_matches")
+    for column in ("stadium", "referee"):
+        if column in frame.columns:
+            frame[column] = frame[column].str.strip()
+    return frame.sort_values(["match_week", "match_date"]).reset_index(drop=True)
+
+
+@st.cache_data
+def player_match() -> pd.DataFrame:
+    return _table("mart_player_match")
+
+
+@st.cache_data
+def lineups() -> pd.DataFrame:
+    return _table("fact_lineups")
+
+
+@st.cache_data
+def team_names() -> pd.DataFrame:
+    """team_id -> team, the join the player marts need to name a club."""
+    return team_season()[["team_id", "team"]]
+
+
 def _event_count(con: duckdb.DuckDBPyConnection) -> int:
     """Raw event count: read from fact_events locally, or the frozen stat when
     running against the committed app database, which does not ship events."""
-    tables = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
-    if "fact_events" in tables:
+    available = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
+    if "fact_events" in available:
         return con.execute("SELECT count(*) FROM fact_events").fetchone()[0]
-    if "pipeline_stats" in tables:
+    if "pipeline_stats" in available:
         row = con.execute(
             "SELECT value FROM pipeline_stats WHERE metric = 'events'").fetchone()
         if row:
@@ -138,16 +171,52 @@ def display_name(row: pd.Series) -> str:
 
 
 @st.cache_data
+def players() -> pd.DataFrame:
+    """Every qualified player with their club and a readable display name.
+
+    This is the frame the search box and every player picker read, so the club
+    join and the nickname fallback happen once here instead of on each page.
+    """
+    frame = player_season().merge(team_names(), on="team_id", how="left")
+    frame["display_name"] = frame.apply(display_name, axis=1)
+    return frame
+
+
+@st.cache_data
 def player_options() -> pd.DataFrame:
     """Selectable players with a readable label, sorted by name."""
-    players = player_season()[
-        ["player_id", "player_name", "nickname", "role", "primary_position",
-         "minutes", "team_id"]
+    options = players()[
+        ["player_id", "player_name", "nickname", "display_name", "role",
+         "primary_position", "minutes", "team_id", "team"]
     ].copy()
-    players["label"] = players.apply(
-        lambda r: f"{display_name(r)}  ·  {r['role']}  ·  {r['minutes']:.0f} min", axis=1
+    options["label"] = options.apply(
+        lambda r: f"{r['display_name']}  ·  {r['role']}  ·  {r['minutes']:.0f} min", axis=1
     )
-    return players.sort_values("label").reset_index(drop=True)
+    return options.sort_values("label").reset_index(drop=True)
+
+
+@st.cache_data
+def league_table() -> pd.DataFrame:
+    return insights.league_table(matches())
+
+
+@st.cache_data
+def club_record(team: str) -> dict:
+    return insights.club_record(matches(), team)
+
+
+@st.cache_data
+def special_player_entries() -> pd.DataFrame:
+    """Every league top-3 finish, with the player's club attached.
+
+    Computed once for all twenty clubs rather than per club page: the ranking is
+    league-wide, so filtering afterwards is both cheaper and less error-prone
+    than re-ranking inside each club's subset.
+    """
+    entries = insights.special_players(player_season(), METRIC_COLUMNS)
+    if entries.empty:
+        return entries
+    return entries.merge(team_names(), on="team_id", how="left")
 
 
 def read_markdown(filename: str) -> str:

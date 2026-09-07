@@ -19,6 +19,14 @@ a definition is not — update this file and the methodology page together.
 
 ## Known data-quality limitations
 
+- **Doubled apostrophes in `player_name`** (repaired in staging). The open-data lineup
+  files spell ten of this season's players with an escaped apostrophe —
+  `"N''Golo Kanté"`, `"John O''Shea"`, `"Yann Gérard M''Vila"` — while the
+  `player_nickname` field beside them is correct. The mismatch between two adjacent
+  fields is what identifies it as an export artefact rather than the real spelling.
+  `src/transformations/names.py` collapses `''` to `'` as the lineups are read, so raw
+  stays byte-identical to what StatsBomb published and every downstream table carries
+  the corrected name. A single apostrophe is of course left alone.
 - **Team-minutes reconciliation** (a warning-level check): summed outfield minutes
   should equal 11 × match length. In ~15 of 760 team-matches (2%) they deviate by more
   than 3 minutes, for three genuine source-data reasons, none of them pipeline bugs:

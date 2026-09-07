@@ -4,7 +4,7 @@ import streamlit as st
 
 from src.app import data
 
-st.title("📖 Methodology & Data Quality")
+st.title(":material/book_2: Methodology & data quality")
 
 summary = data.dataset_summary()
 dataset = data.config()["dataset"]
@@ -27,7 +27,7 @@ st.warning(
     "overlaps the strongest sides, so style and quality are partly entangled. "
     "StatsBomb Open Data publishes no player dates of birth, so age filtering is not "
     "possible from this source.",
-    icon="⚠️",
+    icon=":material/warning:",
 )
 
 tab_method, tab_metrics, tab_quality = st.tabs(
@@ -61,6 +61,16 @@ them: summed team minutes should equal 11 × match length, and in about 15 of 76
 team-matches it does not — a player leaving temporarily without a replacement, a
 red card, or a lineup that internally contradicts itself. These are recorded, not
 silently corrected.
+
+### One source defect that *is* corrected
+
+The open-data lineup files spell ten of this season's players with a doubled
+apostrophe — `N''Golo Kanté`, `John O''Shea`, `Yann Gérard M''Vila` — while the
+nickname field beside them is spelled correctly. Two adjacent fields disagreeing
+is what identifies this as an escaping artefact in StatsBomb's export rather than
+the real spelling, so it is repaired as the lineups are read. Raw data on disk is
+left byte-identical to what was published; the correction lives in the staging
+layer, where every downstream table picks it up once.
 
 ### Team feature checks
 
