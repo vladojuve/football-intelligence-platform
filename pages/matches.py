@@ -31,8 +31,8 @@ selected_id = routing.int_param(routing.MATCH)
 if selected_id is None or selected_id not in set(fixtures["match_id"]):
     st.caption(
         f"All {len(fixtures)} Premier League matches of "
-        f"{data.config()['dataset']['season_name']}. Select a row to open the "
-        "full report."
+        f"{data.config()['dataset']['season_name']}. Click **Open match report** on "
+        "any row."
     )
 
     clubs = sorted(set(fixtures["home_team"]) | set(fixtures["away_team"]))
@@ -53,13 +53,24 @@ if selected_id is None or selected_id not in set(fixtures["match_id"]):
                      "away_score", "away_team", "stadium", "match_id"]].copy()
     listing["score"] = listing["home_score"].astype(str) + "–" + \
         listing["away_score"].astype(str)
+    # A pinned link column, because the row-selection checkbox alone is a 14px
+    # target with nothing saying what it does. Both routes into a report work:
+    # the checkbox selects the row and navigates on one click, and the link is
+    # the discoverable one — it also gives every match a real URL, so a report
+    # can be bookmarked or opened in a new tab.
+    listing["report"] = listing["match_id"].map(routing.match_report_url)
 
     selection = st.dataframe(
-        listing[["match_week", "match_date", "home_team", "score", "away_team",
-                 "stadium"]],
-        hide_index=True, width="stretch", height=560,
+        listing[["report", "match_week", "match_date", "home_team", "score",
+                 "away_team", "stadium"]],
+        hide_index=True, width="stretch", height=620,
         on_select="rerun", selection_mode="single-row", key="fixture_list",
+        row_height=46,
         column_config={
+            "report": st.column_config.LinkColumn(
+                "Match report", display_text=routing.OPEN_REPORT,
+                width="medium", pinned=True,
+                help="Style features, lineups and player totals for this match"),
             "match_week": st.column_config.NumberColumn("MW", format="%d"),
             "match_date": st.column_config.DateColumn("Date", format="DD MMM YYYY"),
             "home_team": "Home", "score": "Score", "away_team": "Away",

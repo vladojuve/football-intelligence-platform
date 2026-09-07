@@ -23,6 +23,21 @@ TEAM_STYLE_MAP = "pages/team_style_map.py"
 MATCHES = "pages/matches.py"
 METHODOLOGY = "pages/methodology.py"
 
+# Streamlit serves a page at its filename without the folder or the extension.
+# `st.switch_page` wants the path above; a link inside a table needs this. They
+# live together so renaming a page breaks both at once.
+MATCHES_URL = "/matches"
+
+# The label on that link. A bare row-selection checkbox is a 14px target with
+# nothing saying what it does, so every table that leads to a match report
+# carries a labelled link column instead, and they all say the same thing.
+OPEN_REPORT = "Open match report  →"
+
+
+def match_report_url(match_id: int | str) -> str:
+    """The address of one match report, for a table's link column."""
+    return f"{MATCHES_URL}?{MATCH}={match_id}"
+
 # Query-parameter names, so a page reads exactly what another page wrote.
 PLAYER = "player"
 TEAM = "team"

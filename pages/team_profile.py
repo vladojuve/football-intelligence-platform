@@ -359,18 +359,25 @@ results = record["matches"][
 ].copy()
 results["score"] = results["goals_for"].astype(str) + "–" + \
     results["goals_against"].astype(str)
+# Same labelled link as the fixture list, pointing at the matches page.
+results["report"] = results["match_id"].map(routing.match_report_url)
 
 selection = st.dataframe(
-    results[["match_week", "match_date", "venue", "opponent", "score", "result"]],
+    results[["report", "match_week", "match_date", "venue", "opponent", "score",
+             "result"]],
     hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row",
-    key="club_results",
+    key="club_results", row_height=44,
     column_config={
+        "report": st.column_config.LinkColumn(
+            "Match report", display_text=routing.OPEN_REPORT,
+            width="medium", pinned=True,
+            help="Style features, lineups and player totals for this match"),
         "match_week": st.column_config.NumberColumn("MW", format="%d"),
         "match_date": st.column_config.DateColumn("Date", format="DD MMM YYYY"),
         "venue": "Venue", "opponent": "Opponent", "score": "Score", "result": "",
     },
 )
-st.caption("Select a row to open the full match report.")
+st.caption("Click **Open match report** on any row.")
 
 chosen_rows = selection.selection["rows"] if selection and selection.selection else []
 if chosen_rows:
