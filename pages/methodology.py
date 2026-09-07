@@ -30,12 +30,19 @@ st.warning(
     icon=":material/warning:",
 )
 
-tab_method, tab_metrics, tab_quality = st.tabs(
-    ["Methodology", "Metric dictionary", "Data quality"]
+tab_method, tab_model, tab_cluster, tab_metrics, tab_quality, tab_ai = st.tabs(
+    ["Methodology", "Model card", "Cluster card", "Metric dictionary",
+     "Data quality", "AI usage"]
 )
 
 with tab_method:
     st.markdown(data.read_markdown("METHODOLOGY.md"))
+
+with tab_model:
+    st.markdown(data.read_markdown("MODEL_CARD.md"))
+
+with tab_cluster:
+    st.markdown(data.read_markdown("CLUSTER_CARD.md"))
 
 with tab_metrics:
     st.markdown(data.read_markdown("METRIC_DICTIONARY.md"))
@@ -87,6 +94,9 @@ layer, where every downstream table picks it up once.
   tiny sample.
 """
     )
+
+with tab_ai:
+    st.markdown(data.read_markdown("AI_USAGE.md"))
 
 st.divider()
 st.subheader("Data source")
