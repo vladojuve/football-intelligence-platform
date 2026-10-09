@@ -64,6 +64,10 @@ quality check breaks, so the marts can never be built from data that violates th
 **Stack:** Python 3.12 · pandas · DuckDB + Parquet · scikit-learn · Plotly ·
 Streamlit · pytest + Ruff + GitHub Actions.
 
+Why Parquet and DuckDB rather than Postgres, SQLite or a warehouse — with the
+alternatives weighed and the costs stated — is in
+[docs/DECISIONS.md](docs/DECISIONS.md).
+
 ## Quick start
 
 ```bash
@@ -211,6 +215,7 @@ from `.streamlit/config.toml`, not from CSS injected at runtime.
 | [docs/MODEL_CARD.md](docs/MODEL_CARD.md) | Player similarity: intended use, evaluation, and where it fails |
 | [docs/CLUSTER_CARD.md](docs/CLUSTER_CARD.md) | Team styles: how k was chosen, what each label rests on, and its limits |
 | [docs/METRIC_DICTIONARY.md](docs/METRIC_DICTIONARY.md) | Every metric, its denominator, and known source-data quirks |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Why the architecture is what it is — alternatives weighed, and what each choice cost |
 | [AI_USAGE.md](AI_USAGE.md) | How the project was built with an AI assistant — including what it got wrong |
 | [docs/PROJECT_GUIDE.pdf](docs/PROJECT_GUIDE.pdf) | A plain-language walkthrough of the whole build |
 

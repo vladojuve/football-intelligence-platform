@@ -419,6 +419,9 @@ def story() -> list:
              ["docs/CLUSTER_CARD.md",
                "The team style groups: how they were chosen, and their limits"],
              ["docs/METRIC_DICTIONARY.md", "Every metric defined precisely, with its denominator"],
+             ["docs/DECISIONS.md",
+              "Why the architecture is what it is - the alternatives weighed, "
+              "and what each choice cost"],
              ["AI_USAGE.md",
                "How this was built with an AI assistant, including what it got wrong"],
              ["DATA_SOURCES.md", "Where the data comes from and the attribution required"],
